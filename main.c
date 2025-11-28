@@ -26,6 +26,49 @@ void add_history(char* unused) {}
 #include <editline/history.h>
 #endif
 
+int number_of_nodes(mpc_ast_t* t) {
+    // base case
+    if (t->children_num == 0) { return 1;}
+
+    // recursive step
+    int total_nodes = 1;
+    for (int i = 0; i < t->children_num; i++){
+        total_nodes += number_of_nodes(t->children[i]);
+    } 
+    return total_nodes;
+}
+
+long eval_op(long x, char* op, long v){
+    if(strcmp("+", op) == 0) { return x + v; }
+    if(strcmp("-", op) == 0) { return x - v; }
+    if(strcmp("*", op) == 0) { return x * v; }
+    if(strcmp("/", op) == 0) { return x / v; }
+    return 0;
+}
+
+long eval(mpc_ast_t* t) {
+    // if tagged as number return value directly
+    if(strstr(t->tag, "number")) { return atoi(t->contents); }
+
+    // select operator (second child)
+    char* op = t->children[1]->contents;
+
+    // store third child as variable 'x'
+    long x = eval(t->children[2]); 
+
+    // iterator the remain children combining them
+    for(int i = 3; i < t->children_num; i++){
+        // if 'expr' is not a substr of tag continue to next child
+        if(strstr(t->children[i]->tag, "expr") == 0) {continue; }
+        
+        x = eval_op(x, op, eval(t->children[i]));
+    }
+
+    return x;
+}
+
+
+
 int main(int argc, char** argv){
     // Create parsers
     mpc_parser_t* Number    = mpc_new("number");
@@ -60,6 +103,27 @@ int main(int argc, char** argv){
             // On success print ast
             mpc_ast_print(r.output); 
             mpc_ast_delete(r.output); 
+
+            // load AST from output
+            mpc_ast_t* a = r.output; 
+
+            // output retult of evaluation of ast
+            long res = eval(a); 
+            printf("Evaluation: %li\n", res); 
+
+            // output number of nodes in abstract syntax tree
+            printf("Number of nodes: %i\n", number_of_nodes(a));
+
+            // output root node info
+            printf("Tag: %s\n", a->tag);
+            printf("Contents: %s\n", a->contents);
+            printf("Number of children: %i\n", a->children_num);
+
+            // Get first child and output info
+            mpc_ast_t* c0 = a->children[0]; 
+            printf("First Child Tag: %s\n", c0->tag);
+            printf("First Child Contents: %s\n", c0->contents);
+            printf("First Child number of children: %i\n", c0->children_num);
         } else {
             // On error print message
             mpc_err_print(r.error); 
