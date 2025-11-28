@@ -38,11 +38,28 @@ int number_of_nodes(mpc_ast_t* t) {
     return total_nodes;
 }
 
+// recursive computes number of leaves in ast
+int number_of_leaves(mpc_ast_t* t){ 
+    // If this node has no children, it's a leaf
+    if(t->children_num == 0) { return 1; }
+
+    // If this node has children, it's not a leaf itself
+    // Count leaves in all children
+    int total_leaf_nodes = 0; 
+    for(int i = 0; i < t->children_num; i++){ 
+        total_leaf_nodes += number_of_leaves(t->children[i]);
+    }
+
+    return total_leaf_nodes;
+}
+
 long eval_op(long x, char* op, long v){
     if(strcmp("+", op) == 0) { return x + v; }
     if(strcmp("-", op) == 0) { return x - v; }
     if(strcmp("*", op) == 0) { return x * v; }
     if(strcmp("/", op) == 0) { return x / v; }
+    if(strcmp("min", op) == 0) { return ((x) > (v)) ? (v): (x); }
+    if(strcmp("max", op) == 0) { return ((x) > (v)) ? (x): (v); }
     return 0;
 }
 
@@ -67,8 +84,6 @@ long eval(mpc_ast_t* t) {
     return x;
 }
 
-
-
 int main(int argc, char** argv){
     // Create parsers
     mpc_parser_t* Number    = mpc_new("number");
@@ -80,12 +95,11 @@ int main(int argc, char** argv){
     mpca_lang(MPCA_LANG_DEFAULT, 
         "                                                           \
             number      : /-?[0-9]+/;                               \
-            operator    : '+' | '-' | '*' | '/' |;                  \
+            operator    : '+' | '-' | '*' | '/' | \"min\" | \"max\";    \
             expr        : <number> | '(' <operator> <expr>+ ')';    \
             lispy       : /^/ <operator> <expr>+ /$/;               \
         ", 
     Number, Operator, Expr, Lispy);
-
 
     // Print version and exit information
     puts("Lispy Version 0.0.0.0.1");
@@ -100,9 +114,6 @@ int main(int argc, char** argv){
         // Attempt to parse user input
         mpc_result_t r; 
         if(mpc_parse("<stdin>", input, Lispy, &r)){
-            // On success print ast
-            mpc_ast_print(r.output); 
-            mpc_ast_delete(r.output); 
 
             // load AST from output
             mpc_ast_t* a = r.output; 
@@ -113,6 +124,7 @@ int main(int argc, char** argv){
 
             // output number of nodes in abstract syntax tree
             printf("Number of nodes: %i\n", number_of_nodes(a));
+            printf("Number of leavees: %i\n", number_of_leaves(a));
 
             // output root node info
             printf("Tag: %s\n", a->tag);
@@ -124,6 +136,10 @@ int main(int argc, char** argv){
             printf("First Child Tag: %s\n", c0->tag);
             printf("First Child Contents: %s\n", c0->contents);
             printf("First Child number of children: %i\n", c0->children_num);
+
+            // On success print ast
+            mpc_ast_print(r.output); 
+            mpc_ast_delete(r.output); 
         } else {
             // On error print message
             mpc_err_print(r.error); 
