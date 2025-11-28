@@ -8,3 +8,15 @@ mingw32-make
 ```
 ./main
 ```
+
+**gdb**
+```
+gdb ./main
+```
+
+```
+lay next
+```
+
+```
+```
