@@ -3,54 +3,96 @@
 
 #include "mpc.h"
 
+#define LASSERT(args, cond, err) if (!(cond)) { free_lval(args); return lval_err(err); }
+
+struct lval; 
+struct lenv;
+typedef struct lval lval;
+typedef struct lenv lenv;
+
 // create enumeration of possible lval types 
-enum { LVAL_ERR, LVAL_NUM, LVAL_SYM, LVAL_SEXPR };
+enum { LVAL_NUM, LVAL_SYM, LVAL_ERR,
+       LVAL_FUN, LVAL_SEXPR, LVAL_QEXPR };
 
-typedef struct lval{ 
+typedef lval* (*lbuiltin)(lenv*, lval*);
+
+struct lval{ 
     int type;
-    long num;
 
+    long num;
     char* err;
     char* sym;
+    lbuiltin fun;
 
     // pointer to a list of lval*
     int count; 
-    struct lval** cell;
-} lval;
+    lval** cell;
+}; 
 
-// Create new lval
+struct lenv {
+    int count; 
+    char** syms; 
+    lval** vals;
+};
+
+// lenv alllocation/deallocation
+lenv* lenv_new(void);
+void free_lenv(lenv* e);
+
+// lenv methods
+lval* lenv_get(lenv* e, lval* k);
+void lenv_put(lenv* e, lval* k, lval* v);
+
+// lval alllocation/deallocation
 lval* lval_num(long x);
 lval* lval_sym(char* s);
-lval* lval_sexpr(void);
 lval* lval_err(char* msg);
-
-// free 
+lval* lval_fun(lbuiltin func);
+lval* lval_sexpr(void);
+lval* lval_qexpr(void);
 void free_lval(lval* v);
 
+// lval methods
 // create lval from abstract syntax tree (ast).
-lval* lval_read_num(mpc_ast_t* t);
-lval* lval_read(mpc_ast_t* t);
 lval* lval_add(lval* v, lval* x);
+lval* lval_copy(lval* v);
 
 // 
 void lval_print(lval* v);
 void lval_println(lval* v);
-void lval_expr_print(lval* v, char open, char close);
-
-//
-int number_of_nodes(mpc_ast_t* t);
-int number_of_leaves(mpc_ast_t* t);
+void lval_expr_print(lval* v);
 
 //
 lval* lval_pop(lval* v, int index);
 lval* lval_take(lval* v, int index);
 
 //
-lval* lval_eval_sexpr(lval* v);
-lval* builtin_op(lval* a, char* op);
-lval* lval_eval(lval* v);
+lval* lval_eval_sexpr(lenv* e, lval* v);
+lval* lval_eval(lenv* e, lval* v);
 
 //
+void lenv_add_builtin(lenv* e, char* name, lbuiltin func);
+void lenv_add_builtins(lenv* e);
+
+lval* builtin_add(lenv* e, lval* a);
+lval* builtin_sub(lenv* e, lval* a);
+lval* builtin_mul(lenv* e, lval* a);
+lval* builtin_div(lenv* e, lval* a);
+
+lval* builtin_set(lenv* e, lval* a);
+lval* builtin_setq(lenv* e, lval* a);
+lval* builtin_car(lenv* e, lval* a);
+lval* builtin_cdr(lenv* e, lval* a);
+lval* builtin_eval(lenv* e, lval* a);
+
+lval* builtin_op(lenv* e, lval* a, char* op);
+
+// ast evaluation methods
+lval* lval_read_num(mpc_ast_t* t);
+lval* lval_read(mpc_ast_t* t);
+int number_of_nodes(mpc_ast_t* t);
+int number_of_leaves(mpc_ast_t* t);
+
 lval* eval_op(lval* x, char* op, lval* y);
 lval* eval(mpc_ast_t* t);
 
