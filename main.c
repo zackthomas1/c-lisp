@@ -55,7 +55,7 @@ lval* lenv_get(lenv* e, lval* k) {
         }
     }
     // If no symbol found return error
-    return lval_err("unbound symbol");
+    return lval_err("unbound symbol '%s'", k->sym);
 }
 
 void lenv_put(lenv* e, lval* k, lval* v) {
@@ -117,13 +117,26 @@ lval* lval_sym(char* s) {
 }
 
 // Create a new error type lval
-lval* lval_err(char* msg){ 
+lval* lval_err(char* fmsg, ...){ 
     lval* v = malloc(sizeof(lval));
-    
     v->type = LVAL_ERR;
-    v->err = malloc(strlen(msg) + 1);
-    strcpy(v->err, msg);
+
+    // Create a va and initialize 
+    va_list va; 
+    va_start(va, fmsg);
+
+    v->err = malloc(512);
     
+    // printf the error string with max of 511 chars
+    vsnprintf(v->err, 511, fmsg, va);
+
+    // reallocate number of bytees actually used
+    v->err = realloc(v->err, strlen(v->err)+1);
+
+    // cleanup va list 
+    va_end(va);
+
+    // initialize unused struct members
     v->num = INT_MIN;
     v->sym = NULL;
     v->fun = NULL;
@@ -271,6 +284,27 @@ lval* lval_cons(lval* x, lval* y) {
     free_lval(y); 
     return x;
 }
+
+char* lval_type(int t) {
+    switch (t)
+    {
+    case LVAL_NUM:
+        return "Number";
+    case LVAL_SYM:
+        return "Number";
+    case LVAL_ERR:
+        return "Error";
+    case LVAL_FUN:
+        return "Function";
+    case LVAL_SEXPR:
+        return "S-Express";
+    case LVAL_QEXPR:
+        return "Q-Expression";
+    default:
+        return "Unknown";
+    }
+}
+
 
 void lval_print(lval* v){
     switch (v->type)
@@ -427,13 +461,16 @@ lval* builtin_div(lenv* e, lval* a) {
 
 lval* builtin_set(lenv* e, lval* a) {
     LASSERT(a, a->cell[0]->type == LVAL_QEXPR,
-        "Function 'set' passed incorrect type");
+        "Function 'set' passed incorrect typefor argument 0. "
+            "Got %s, Expected %s.",
+            lval_type(a->cell[0]->type), lval_type(LVAL_QEXPR));
 
     // first argument is symbol
     lval* sym = a->cell[0];
 
     LASSERT(a, a->count - 1 == 1,
-        "Function 'set' Unable to define variable. Mismatch between symbols to actuals(values)"); 
+        "Function 'set' Unable to define variable." 
+        "Mismatch between symbols to actuals(values)"); 
 
     lval* val = a->cell[1];
 
@@ -450,10 +487,14 @@ lval* builtin_setq(lenv* e, lval* a) {
 lval* builtin_car(lenv* e, lval* a) {
     // check error conditions
     LASSERT(a, a->count == 1, 
-        "Function 'car' passed too few arguments!");
+        "Function 'car' passed too few arguments!"
+        "Got %i, Expected %i",
+        a->count, 1);
     
     LASSERT(a, a->cell[0]->type == LVAL_QEXPR, 
-        "Function 'car' passed incorrect type");
+        "Function 'car' passed incorrect typefor argument 0. "
+            "Got %s, Expected %s.",
+            lval_type(a->cell[0]->type), lval_type(LVAL_QEXPR));
 
     lval* v = lval_take(lval_take(a, 0), 0); 
     if(v->type == LVAL_SEXPR){
@@ -465,10 +506,14 @@ lval* builtin_car(lenv* e, lval* a) {
 lval* builtin_cdr(lenv* e, lval* a) {
     // check error conditions
     LASSERT(a, a->count == 1, 
-        "Function 'cdr' passed too few arguments!");
+        "Function 'cdr' passed too few arguments!"
+        "Got %i, Expected %i",
+        a->count, 1);
     
     LASSERT(a, a->cell[0]->type == LVAL_QEXPR, 
-        "Function 'cdr' passed incorrect type");
+        "Function 'cdr' passed incorrect typefor argument 0. "
+            "Got %s, Expected %s.",
+            lval_type(a->cell[0]->type), lval_type(LVAL_QEXPR));
     
     LASSERT(a, a->cell[0]->count != 0, 
         "Function 'cdr' passed passed {}");
@@ -484,8 +529,10 @@ lval* builtin_cdr(lenv* e, lval* a) {
 lval* builtin_cons(lenv* e, lval* a){
     
     for (int i = 0; i < a->count; i++) {
-        LASSERT(a, a->cell[i]->type == LVAL_QEXPR, 
-            "Function 'cons' passed incorrect type.")
+        LASSERT(a, a->cell[i]->type == LVAL_QEXPR,
+            "Function 'cons' passed incorrect typefor argument 0. "
+            "Got %s, Expected %s.",
+            lval_type(a->cell[0]->type), lval_type(LVAL_QEXPR));
     }
 
     lval* x = lval_pop(lval_pop(a, 0), 0);

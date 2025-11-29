@@ -3,7 +3,7 @@
 
 #include "mpc.h"
 
-#define LASSERT(args, cond, err) if (!(cond)) { free_lval(args); return lval_err(err); }
+#define LASSERT(args, cond, fmsg, ...) if (!(cond)) { free_lval(args); return lval_err(fmsg, ##__VA_ARGS__); }
 
 struct lval; 
 struct lenv;
@@ -46,7 +46,7 @@ void lenv_put(lenv* e, lval* k, lval* v);
 // lval alllocation/deallocation
 lval* lval_num(long x);
 lval* lval_sym(char* s);
-lval* lval_err(char* msg);
+lval* lval_err(char* fmsg, ...);
 lval* lval_fun(lbuiltin func);
 lval* lval_sexpr(void);
 lval* lval_qexpr(void);
@@ -59,6 +59,7 @@ lval* lval_copy(lval* v);
 lval* lval_cons(lval* x, lval* y);
 
 // 
+char* lval_type(int t);
 void lval_print(lval* v);
 void lval_println(lval* v);
 void lval_expr_print(lval* v);
