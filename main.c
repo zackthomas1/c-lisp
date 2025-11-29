@@ -257,6 +257,21 @@ lval* lval_copy(lval* v) {
     return x;
 }
 
+lval* lval_cons(lval* x, lval* y) {
+    // for each cell in y add it to x
+    while(y->count) {
+        lval* yprim = lval_pop(y, 0); 
+        if (yprim->type == LVAL_SEXPR){ 
+            x = lval_cons(x, yprim);
+        }else{
+            x = lval_add(x, yprim);
+        }
+    }
+
+    free_lval(y); 
+    return x;
+}
+
 void lval_print(lval* v){
     switch (v->type)
     {
@@ -357,6 +372,8 @@ lval* lval_eval_sexpr(lenv* e, lval* v)
 }
 
 lval* lval_eval(lenv* e, lval* v) {
+    
+    // Evaluate/resolve symbols using environment map
     if (v->type == LVAL_SYM){
         lval* x = lenv_get(e, v);
         free_lval(v);
@@ -365,6 +382,8 @@ lval* lval_eval(lenv* e, lval* v) {
 
     // evaluate S-expression
     if (v->type == LVAL_SEXPR) { return lval_eval_sexpr(e, v); }
+
+    // all other lvals evaluate to themself
     return v;
 }
 
@@ -383,8 +402,11 @@ void lenv_add_builtins(lenv* e){
     lenv_add_builtin(e, "*", builtin_mul);
     lenv_add_builtin(e, "/", builtin_div);
     lenv_add_builtin(e, "set", builtin_set);
+    lenv_add_builtin(e, "setq", builtin_setq);
     lenv_add_builtin(e, "car", builtin_car);
     lenv_add_builtin(e, "cdr", builtin_cdr);
+    lenv_add_builtin(e, "cons", builtin_cons);
+    lenv_add_builtin(e, "eval", builtin_eval);
 }
 
 lval* builtin_add(lenv* e, lval* a) {
@@ -433,7 +455,10 @@ lval* builtin_car(lenv* e, lval* a) {
     LASSERT(a, a->cell[0]->type == LVAL_QEXPR, 
         "Function 'car' passed incorrect type");
 
-    lval* v = lval_take(a, 0); 
+    lval* v = lval_take(lval_take(a, 0), 0); 
+    if(v->type == LVAL_SEXPR){
+        return lval_pop(v, 0);
+    }
     return v;
 }
 
@@ -448,15 +473,45 @@ lval* builtin_cdr(lenv* e, lval* a) {
     LASSERT(a, a->cell[0]->count != 0, 
         "Function 'cdr' passed passed {}");
 
-    
-    lval* v = lval_take(a, 0);
+    lval* v = lval_take(lval_take(a, 0), 0);
+    if (v->type == LVAL_SEXPR){
+        free_lval(lval_pop(v,0));
+        return lval_add(lval_qexpr(), v);
+    }
+    return lval_qexpr();
+}
 
-    free_lval(lval_pop(v,0));
-    return v;
+lval* builtin_cons(lenv* e, lval* a){
+    
+    for (int i = 0; i < a->count; i++) {
+        LASSERT(a, a->cell[i]->type == LVAL_QEXPR, 
+            "Function 'cons' passed incorrect type.")
+    }
+
+    lval* x = lval_pop(lval_pop(a, 0), 0);
+    if (x->type == LVAL_QEXPR) {
+        x->type = LVAL_SEXPR;
+    } else if (x->type != LVAL_SEXPR) {
+        x = lval_add(lval_sexpr(), x); 
+    }
+
+    while (a->count){ 
+        x = lval_cons(x, lval_pop(a, 0));
+    }
+
+    free_lval(a);
+    return lval_add(lval_qexpr(), x);
 }
 
 lval* builtin_eval(lenv* e, lval* a) {
-    return NULL;
+    LASSERT(a, a->count == 1, 
+        "Function 'eval' passed too may arguments");
+    LASSERT(a, a->cell[0]->type == LVAL_QEXPR, 
+        "Function 'eval' passed incorrect type");
+    
+        lval* x = lval_take(a, 0); 
+        x->type = LVAL_SEXPR; 
+        return lval_eval(e, x);
 }
 
 lval* builtin_op(lenv* e, lval* a, char* op){

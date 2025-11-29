@@ -56,14 +56,31 @@ void free_lval(lval* v);
 // create lval from abstract syntax tree (ast).
 lval* lval_add(lval* v, lval* x);
 lval* lval_copy(lval* v);
+lval* lval_cons(lval* x, lval* y);
 
 // 
 void lval_print(lval* v);
 void lval_println(lval* v);
 void lval_expr_print(lval* v);
 
-//
+/**
+ * @brief extracts single element from s-expression at index 
+ * and shifts the rest of the list backward so that it no longer contains 
+ * that lval* 
+ * 
+ * @param s-expression
+ * @param index
+ * @return the element at index in s-expression v
+ */
 lval* lval_pop(lval* v, int index);
+/**
+ * @brief deletes the list it has extracted the element from.
+ * This is like taking an element from the list and deleting the rest.
+ * 
+ * @param s-expression
+ * @param index
+ * @return the element at index in s-expression v
+ */
 lval* lval_take(lval* v, int index);
 
 //
@@ -83,6 +100,7 @@ lval* builtin_set(lenv* e, lval* a);
 lval* builtin_setq(lenv* e, lval* a);
 lval* builtin_car(lenv* e, lval* a);
 lval* builtin_cdr(lenv* e, lval* a);
+lval* builtin_cons(lenv* e, lval* a);
 lval* builtin_eval(lenv* e, lval* a);
 
 lval* builtin_op(lenv* e, lval* a, char* op);
