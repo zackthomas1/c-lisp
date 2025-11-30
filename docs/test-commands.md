@@ -18,7 +18,7 @@
 **CAR CDDR CONS**
 (car '(a b))
 (cdr '(a b))
-(set 'C (4 5 6 7))
+(set 'C '(4 5 6 7))
 (car '(1 2 3 4))
 (cdr '(1 2 3 4))
 (car C)
