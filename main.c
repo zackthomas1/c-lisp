@@ -812,33 +812,6 @@ lval* eval_op(lval* x, char* op, lval* y){
     return lval_err("bad operation");
 }
 
-int number_of_nodes(mpc_ast_t* t) {
-    // base case
-    if (t->children_num == 0) { return 1;}
-
-    // recursive step
-    int total_nodes = 1;
-    for (int i = 0; i < t->children_num; i++){
-        total_nodes += number_of_nodes(t->children[i]);
-    } 
-    return total_nodes;
-}
-
-// recursive computes number of leaves in ast
-int number_of_leaves(mpc_ast_t* t){ 
-    // If this node has no children, it's a leaf
-    if(t->children_num == 0) { return 1; }
-
-    // If this node has children, it's not a leaf itself
-    // Count leaves in all children
-    int total_leaf_nodes = 0; 
-    for(int i = 0; i < t->children_num; i++){ 
-        total_leaf_nodes += number_of_leaves(t->children[i]);
-    }
-
-    return total_leaf_nodes;
-}
-
 lval* eval(mpc_ast_t* t) {
     // if tagged as number return value directly
     if(strstr(t->tag, "number")) { 

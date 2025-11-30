@@ -140,8 +140,6 @@ lval* builtin_op(lenv* e, lval* a, char* op);
 // ast evaluation methods
 lval* lval_read_num(mpc_ast_t* t);
 lval* lval_read(mpc_ast_t* t);
-int number_of_nodes(mpc_ast_t* t);
-int number_of_leaves(mpc_ast_t* t);
 
 lval* eval_op(lval* x, char* op, lval* y);
 lval* eval(mpc_ast_t* t);
