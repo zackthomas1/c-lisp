@@ -3,7 +3,22 @@
 
 #include "mpc.h"
 
-#define LASSERT(args, cond, fmsg, ...) if (!(cond)) { free_lval(args); return lval_err(fmsg, ##__VA_ARGS__); }
+#define LASSERT(args, cond, fmsg, ...) if (!(cond)) { lval* err =  lval_err(fmsg, ##__VA_ARGS__); free_lval(args); return err; }
+#define LASSERT_TYPE(func, args, index, expect) \
+  LASSERT(args, args->cell[index]->type == expect, \
+    "Function '%s' passed incorrect type for argument %i. " \
+    "Got %s, Expected %s.", \
+    func, index, lval_type(args->cell[index]->type), lval_type(expect))
+
+#define LASSERT_NUM(func, args, num) \
+  LASSERT(args, args->count == num, \
+    "Function '%s' passed incorrect number of arguments. " \
+    "Got %i, Expected %i.", \
+    func, args->count, num)
+
+#define LASSERT_NOT_EMPTY(func, args, index) \
+  LASSERT(args, args->cell[index]->count != 0, \
+    "Function '%s' passed {} for argument %i.", func, index);
 
 struct lval; 
 struct lenv;
@@ -36,18 +51,21 @@ struct lval{
 }; 
 
 struct lenv {
+    lenv* par;
     int count; 
     char** syms; 
     lval** vals;
 };
 
-// lenv alllocation/deallocation
+// lval Contructor/Destructor
 lenv* lenv_new(void);
 void free_lenv(lenv* e);
+lenv* lenv_copy(lenv* e);
 
 // lenv methods
 lval* lenv_get(lenv* e, lval* k);
 void lenv_put(lenv* e, lval* k, lval* v);
+void lenv_def(lenv* e, lval*k, lval* v);
 
 // lval Contructor/Destructor
 lval* lval_super();
@@ -95,6 +113,7 @@ lval* lval_take(lval* v, int index);
 //
 lval* lval_eval_sexpr(lenv* e, lval* v);
 lval* lval_eval(lenv* e, lval* v);
+lval* lval_call(lenv* e, lval* f, lval* a);
 
 //
 void lenv_add_builtin(lenv* e, char* name, lbuiltin func);
@@ -111,6 +130,10 @@ lval* builtin_car(lenv* e, lval* a);
 lval* builtin_cdr(lenv* e, lval* a);
 lval* builtin_cons(lenv* e, lval* a);
 lval* builtin_eval(lenv* e, lval* a);
+lval* builtin_lambda(lenv* e, lval* a);
+lval* builtin_def(lenv* e, lval* a);
+lval* builtin_put(lenv* e, lval* a);
+lval* builtin_var(lenv* e, lval* a, char* func);
 
 lval* builtin_op(lenv* e, lval* a, char* op);
 

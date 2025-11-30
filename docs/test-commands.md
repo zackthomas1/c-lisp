@@ -34,3 +34,9 @@
 (eval '(+ 5 4))
 (eval 'E)
 (eval (car '('(+ 1 2) '(+ 10 20))))
+
+**DEF**
+(def 'add-mult (defun '(x y) '(+ x (* x y))))
+(add-mult 10 20)
+(def 'add-mult-ten (add-mult 10))
+(add-mult-ten 50)
