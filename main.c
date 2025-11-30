@@ -82,43 +82,48 @@ void lenv_put(lenv* e, lval* k, lval* v) {
     e->vals[e->count-1] = lval_copy(v); 
 }
 
+lval* lval_super() {
+    lval* v = malloc(sizeof(lval));
+    v->type = LVAL_NUM;
+
+    v->num = INT_MIN;
+    v->err = NULL;
+    v->sym = NULL;
+
+    v->fun = NULL;
+    v->env = NULL;
+    v->formals = NULL;
+    v->body = NULL;
+
+    v->count = 0;
+    v->cell = NULL;
+    return v;
+}
+
+
 // Create a new number type lval
 lval* lval_num(long x) { 
-    lval* v = malloc(sizeof(lval));
+    lval* v = lval_super();
 
     v->type = LVAL_NUM; 
     v->num = x;
 
-    v->err = NULL;
-    v->sym = NULL;
-    v->fun = NULL;
-
-    v->count = 0;
-    v->cell = NULL;
-    
     return v;
 }
 
 lval* lval_sym(char* s) {
-    lval* v = malloc(sizeof(lval));
+    lval* v = lval_super();
 
     v->type = LVAL_SYM;
     v->sym = malloc(strlen(s) + 1);
     strcpy(v->sym, s);
 
-    v->num = INT_MIN;
-    v->err = NULL;
-    v->fun = NULL;
-
-    v->count = 0;
-    v->cell = NULL;
-    
     return v;
 }
 
 // Create a new error type lval
 lval* lval_err(char* fmsg, ...){ 
-    lval* v = malloc(sizeof(lval));
+    lval* v = lval_super();
     v->type = LVAL_ERR;
 
     // Create a va and initialize 
@@ -136,59 +141,46 @@ lval* lval_err(char* fmsg, ...){
     // cleanup va list 
     va_end(va);
 
-    // initialize unused struct members
-    v->num = INT_MIN;
-    v->sym = NULL;
-    v->fun = NULL;
-
-    v->count = 0;
-    v->cell = NULL;
-
     return v;
 }
 
 lval* lval_fun(lbuiltin func) {
-    lval* v = malloc(sizeof(lval));
+    lval* v = lval_super();
     
     v->type = LVAL_FUN; 
     v->fun = func;
-    
-    v->num = INT_MIN;
-    v->err = NULL;
-    v->sym = NULL;
 
-    v->count = 0;
-    v->cell = NULL;
+    return v;
+}
+
+lval* lval_lambda(lval* formals, lval* body) {
+    lval* v = lval_super();
+    v->type = LVAL_FUN;
+
+    v->fun = NULL;
+    v->env = lenv_new();
+    v->formals = formals; 
+    v->body = body; 
 
     return v;
 }
 
 lval* lval_sexpr(void) {
-    lval* v = malloc(sizeof(lval)); 
+    lval* v = lval_super();
     
     v->type = LVAL_SEXPR; 
     v->count = 0; 
     v->cell = NULL; // NULL is a special constant that points to memory location 0
     
-    v->num = INT_MIN;
-    v->err = NULL;
-    v->sym = NULL;
-    v->fun = NULL;
-
     return v;
 }
 
 lval* lval_qexpr(void) {
-    lval* v = malloc(sizeof(lval));
-    
+    lval* v = lval_super();
+
     v->type = LVAL_QEXPR;
     v->count = 0; 
     v->cell = NULL;
-    
-    v->num = INT_MIN;
-    v->err = NULL;
-    v->sym = NULL;
-    v->fun = NULL;
 
     return v;
 }
@@ -614,9 +606,9 @@ lval* lval_read(mpc_ast_t* t){
 
     // if root (>) or sexpr ten create empty list
     lval* x = NULL;
-    if(strcmp(t->tag, ">") == 0) { x = lval_sexpr(); }
-    if(strstr(t->tag, "sexpr")) { x = lval_sexpr(); }
-    if(strstr(t->tag, "qexpr")) { x = lval_qexpr(); }
+    if(strcmp(t->tag, ">") == 0) { x = lval_sexpr(); t = t->children[0]; }
+    else if(strstr(t->tag, "sexpr")) { x = lval_sexpr(); }
+    else if(strstr(t->tag, "qexpr")) { x = lval_qexpr(); }
 
     // fill this list with valid expression contained within
     for(int i = 0; i < t->children_num; i++){
@@ -716,7 +708,7 @@ int main(int argc, char** argv){
             sexpr   : '(' <expr>* ')';                              \
             qexpr   : '\''<expr>;                              \
             expr    : <number> | <symbol> | <sexpr> | <qexpr>;                \
-            lispy   : /^/ <expr>* /$/;                               \
+            lispy   : <sexpr>;                               \
         ", 
     Number, Symbol, Sexpr, Qexpr, Expr, Lispy);
 
@@ -761,11 +753,13 @@ int main(int argc, char** argv){
 
             // transform ast to sexptr
             lval* x = lval_read(a);
-            printf("lispy: "); lval_println(x);
+            printf("init lval: "); 
+            lval_println(x);
 
             // output sexpr eval
             lval* res = lval_eval(e, x);
-            printf("lispy eval: "); lval_println(res);
+            printf("eval lval: "); 
+            lval_println(res);
             free_lval(res);
 
             mpc_ast_delete(a); 
