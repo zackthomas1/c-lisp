@@ -732,7 +732,7 @@ lval* builtin_eq(lenv* e, lval* a) {
 }
 
 lval* builtin_equal(lenv* e, lval* a) {
-    return NULL
+    return NULL;
 }
 
 lval* builtin_cond(lenv* e, lval* a) {
@@ -912,8 +912,8 @@ int main(int argc, char** argv){
 
             // transform ast to sexptr
             lval* x = lval_read(a);
-            printf("init lval: "); 
-            lval_println(x);
+            // printf("init lval: "); 
+            // lval_println(x);
 
             // output sexpr eval
             lval* res = lval_eval(e, x);
