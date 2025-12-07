@@ -129,11 +129,16 @@ lval* builtin_setq(lenv* e, lval* a);
 lval* builtin_car(lenv* e, lval* a);
 lval* builtin_cdr(lenv* e, lval* a);
 lval* builtin_cons(lenv* e, lval* a);
+
 lval* builtin_eval(lenv* e, lval* a);
 lval* builtin_lambda(lenv* e, lval* a);
 lval* builtin_def(lenv* e, lval* a);
 lval* builtin_put(lenv* e, lval* a);
 lval* builtin_var(lenv* e, lval* a, char* func);
+
+lval* builtin_eq(lenv* e, lval* a);
+lval* builtin_equal(lenv* e, lval* a);
+lval* builtin_cond(lenv* e, lval* a);
 
 lval* builtin_op(lenv* e, lval* a, char* op);
 

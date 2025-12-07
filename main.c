@@ -543,6 +543,8 @@ void lenv_add_builtins(lenv* e){
     lenv_add_builtin(e, "defun", builtin_lambda);
     lenv_add_builtin(e, "def", builtin_def);
     lenv_add_builtin(e, "=", builtin_put);
+    lenv_add_builtin(e, "eq", builtin_eq);
+    lenv_add_builtin(e, "equal", builtin_equal);
 }
 
 lval* builtin_add(lenv* e, lval* a) {
@@ -723,6 +725,18 @@ lval* builtin_var(lenv* e, lval* a, char* func) {
     }
     free_lval(a);
     return lval_sexpr();
+}
+
+lval* builtin_eq(lenv* e, lval* a) {
+    
+}
+
+lval* builtin_equal(lenv* e, lval* a) {
+    return NULL
+}
+
+lval* builtin_cond(lenv* e, lval* a) {
+
 }
 
 lval* builtin_op(lenv* e, lval* a, char* op){
