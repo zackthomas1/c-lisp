@@ -222,6 +222,22 @@ lval* lval_qexpr(void) {
     return v;
 }
 
+lval* lval_t(void) { 
+    lval* v = lval_super(); 
+    v->type = LVAL_T; 
+    v->num = 1; 
+
+    return v;
+}
+
+lval* lval_nil(void) {
+    lval* v = lval_super();
+    v->type = LVAL_NIL;
+    v->num = 0;
+
+    return v;
+}
+
 void free_lval(lval* v){
     switch (v->type)
     {
@@ -727,16 +743,44 @@ lval* builtin_var(lenv* e, lval* a, char* func) {
     return lval_sexpr();
 }
 
-lval* builtin_eq(lenv* e, lval* a) {
-    
+lval* builtin_eq(lenv* e, lval* a, lval* b) {
+    return a == b ? lval_t() : lval_nil();
 }
 
-lval* builtin_equal(lenv* e, lval* a) {
-    return NULL;
+lval* builtin_equal(lenv* e, lval* a, lval* b) {
+    if (a->type == b->type){ 
+        switch (a->type)
+        {
+        case LVAL_NUM:
+            if(a->num == b->num){
+                return lval_t();
+            }
+            break;
+        case LVAL_SYM:
+            /* code */
+            break;
+        case LVAL_FUN:
+            /* code */
+            break;
+        case LVAL_SEXPR:
+            /* code */
+            break;
+        case LVAL_QEXPR:
+            /* code */
+            break;
+        case LVAL_T:
+        case LVAL_NIL:
+        default:
+            return lval_t();
+            break;
+        }
+    }
+
+    return lval_nil();
 }
 
 lval* builtin_cond(lenv* e, lval* a) {
-
+    return NULL;
 }
 
 lval* builtin_op(lenv* e, lval* a, char* op){

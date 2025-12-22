@@ -27,7 +27,9 @@ typedef struct lenv lenv;
 
 // create enumeration of possible lval types 
 enum { LVAL_NUM, LVAL_SYM, LVAL_ERR,
-       LVAL_FUN, LVAL_SEXPR, LVAL_QEXPR };
+       LVAL_FUN, LVAL_SEXPR, LVAL_QEXPR, 
+       LVAL_T, LVAL_NIL,
+      };
 
 typedef lval* (*lbuiltin)(lenv*, lval*);
 
@@ -37,7 +39,7 @@ struct lval{
     // basic
     long num;
     char* err;
-    char* sym;
+    char* sym;   
     
     // function
     lbuiltin fun;
@@ -76,6 +78,8 @@ lval* lval_fun(lbuiltin func);
 lval* lval_lambda(lval* formals, lval* body);
 lval* lval_sexpr(void);
 lval* lval_qexpr(void);
+lval* lval_t(void);
+lval* lval_nil(void);
 void free_lval(lval* v);
 
 // lval methods
@@ -136,8 +140,8 @@ lval* builtin_def(lenv* e, lval* a);
 lval* builtin_put(lenv* e, lval* a);
 lval* builtin_var(lenv* e, lval* a, char* func);
 
-lval* builtin_eq(lenv* e, lval* a);
-lval* builtin_equal(lenv* e, lval* a);
+lval* builtin_eq(lenv* e, lval* a, lval* b);
+lval* builtin_equal(lenv* e, lval* a, lval* b);
 lval* builtin_cond(lenv* e, lval* a);
 
 lval* builtin_op(lenv* e, lval* a, char* op);
